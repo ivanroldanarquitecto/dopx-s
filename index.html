@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1434,13 +1435,45 @@ function puntoDentroPoligono(lat,lng,coords){
 }
 
 // ── CÁMARA ────────────────────────────────────────────────────────
+// ── TIMER DE SESIÓN (15 min de inactividad → regresa a GPS) ──────
+const SESION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutos
+let _sesionTimer = null;
+
+function resetSesionTimer(){
+  if(_sesionTimer) clearTimeout(_sesionTimer);
+  _sesionTimer = setTimeout(()=>{
+    registrarEvento('SESION_EXPIRADA','Inactividad 15 min — regreso a GPS');
+    toast('Sesión expirada por inactividad. Revalide posición.','info');
+    detenerCamara();
+    showScreen('screen-gps');
+    _sesionTimer = null;
+  }, SESION_TIMEOUT_MS);
+}
+
+function cancelarSesionTimer(){
+  if(_sesionTimer){ clearTimeout(_sesionTimer); _sesionTimer = null; }
+}
+
 async function activarCamara(){
   updateStepBar(7);
   showScreen('screen-camara');
   const res = APP.seccion==='DET' ? {width:2048,height:1536} : {width:1600,height:1200};
+
+  if(navigator.permissions){
+    try {
+      const permStatus = await navigator.permissions.query({name:'camera'});
+      if(permStatus.state === 'denied'){
+        toast('Cámara bloqueada. Ve a Configuración → Apps → Chrome → Permisos → Cámara → Permitir','error');
+        registrarEvento('CAMARA_BLOQUEADA','Permission denied permanentemente');
+        showScreen('screen-gps');
+        return;
+      }
+    } catch(pe){}
+  }
+
   try {
     APP.camStream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:'environment',width:{ideal:res.width},height:{ideal:res.height}},
+      video:{facingMode:{ideal:'environment'},width:{ideal:res.width},height:{ideal:res.height}},
       audio:false
     });
     document.getElementById('camera-preview').srcObject = APP.camStream;
@@ -1448,13 +1481,20 @@ async function activarCamara(){
     document.getElementById('cam-seccion-label').textContent = APP.seccion;
     document.getElementById('cam-plano-label').textContent = APP.plano.split('—')[0].trim();
     document.getElementById('cam-estado-label').textContent = APP.estado;
-    // HUD GPS
     document.getElementById('hud-gps').textContent = APP.gps?.inside ? 'GPS ✓' : 'GPS ⚠';
-    // Obtener NTP
     obtenerNTP();
+    resetSesionTimer(); // inicia timer de 15 min
   } catch(e){
-    toast('No se pudo acceder a la cámara: '+e.message,'error');
-    registrarEvento('CAMARA_ERROR',e.message);
+    if(e.name==='NotAllowedError'){
+      toast('Permiso de cámara denegado. Toca el ícono de candado en la barra de dirección → Permisos → Cámara → Permitir','error');
+    } else if(e.name==='NotFoundError'){
+      toast('No se encontró cámara en este dispositivo.','error');
+    } else if(e.name==='NotReadableError'){
+      toast('La cámara está siendo usada por otra app. Ciérrala e intenta de nuevo.','error');
+    } else {
+      toast('Error de cámara: '+e.message,'error');
+    }
+    registrarEvento('CAMARA_ERROR',e.name+': '+e.message);
     showScreen('screen-gps');
   }
 }
@@ -1483,6 +1523,7 @@ async function obtenerNTP(){
 }
 
 function detenerCamara(){
+  cancelarSesionTimer();
   if(APP.camStream){ APP.camStream.getTracks().forEach(t=>t.stop()); APP.camStream=null; }
   const v = document.getElementById('camera-preview'); v.srcObject=null;
 }
@@ -1496,6 +1537,7 @@ async function disparo(){
   canvas.width=w; canvas.height=h;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video,0,0,w,h);
+  resetSesionTimer(); // reinicia timer al tomar foto
   // Obtener blob
   canvas.toBlob(async blob=>{
     APP.fotoBlob = blob;
@@ -1608,22 +1650,71 @@ async function actualizarContadorQueue(){
 
 async function intentarSync(entry){
   if(!navigator.onLine) return;
-  // SIMULADO: en producción → Drive API v3
   try {
-    await new Promise(r=>setTimeout(r,1200)); // Simula upload
-    await dbDelete('queue', entry.id);
-    actualizarContadorQueue();
-    // Si NTP pendiente, asignar ahora
+    // Si NTP pendiente, intentar asignar antes del upload
     if(!entry.ntpVerified){
       try {
-        const r = await fetch('https://worldtimeapi.org/api/timezone/America/Mexico_City');
-        const data = await r.json();
-        entry.ntpTs = data.datetime;
-        entry.ntpVerified = true;
-        entry.ntpFlag = 'TIMESTAMP_ASSIGNED_ON_SYNC';
+        const rNTP = await Promise.race([
+          fetch('https://worldtimeapi.org/api/timezone/America/Mexico_City'),
+          new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),4000))
+        ]);
+        if(rNTP.ok){
+          const dataNTP = await rNTP.json();
+          entry.ntpTs = dataNTP.datetime;
+          entry.ntpVerified = true;
+          entry.ntpFlag = 'TIMESTAMP_ASSIGNED_ON_SYNC';
+        }
       } catch(e){ entry.ntpFlag='TIMESTAMP_UNRESOLVED'; }
     }
-  } catch(e){ /* queda en cola */ }
+
+    // Upload a Apps Script / Drive
+    const payload = {
+      id: entry.id,
+      dataUrl: entry.dataUrl,
+      obraId: entry.obraId,
+      obraNombre: entry.obraNombre,
+      contrato: entry.contrato,
+      usuario: entry.usuario,
+      usuarioNombre: entry.usuarioNombre,
+      iniciales: entry.iniciales,
+      rol: entry.rol,
+      seccion: entry.seccion,
+      plano: entry.plano,
+      estado: entry.estado,
+      gpsLat: entry.gpsLat,
+      gpsLng: entry.gpsLng,
+      gpsAcc: entry.gpsAcc,
+      gpsDentro: entry.gpsDentro,
+      gpsWarn: entry.gpsWarn,
+      ntpTs: entry.ntpTs,
+      ntpVerified: entry.ntpVerified,
+      sha256: entry.sha256,
+      capturedAt: entry.capturedAt,
+      comentarios: entry.comentarios || []
+    };
+
+    const resp = await Promise.race([
+      fetch('https://script.google.com/macros/s/AKfycby8UQ533xAaXvvMQFqSk7NNRs0OwlSz_lpV7gBlbF0ySfg5stoZZjQ9G6DPvZvd0A/exec', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      }),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),60000))
+    ]);
+
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const result = await resp.json();
+    if(!result.ok) throw new Error(result.mensaje || 'Error en servidor');
+
+    // Upload exitoso → eliminar de cola
+    await dbDelete('queue', entry.id);
+    actualizarContadorQueue();
+    registrarEvento('SYNC_OK', entry.id + ' → ' + (result.driveId||''));
+
+  } catch(e){
+    // Queda en cola para reintento
+    registrarEvento('SYNC_ERROR', entry.id + ': ' + e.message);
+  }
 }
 
 async function syncNow(){
