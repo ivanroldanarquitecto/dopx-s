@@ -1666,50 +1666,41 @@ async function intentarSync(entry){
         }
       } catch(e){ entry.ntpFlag='TIMESTAMP_UNRESOLVED'; }
     }
-
-    // Construir FormData (compatible con Apps Script doPost)
-    const meta = {
-      id: entry.id,
-      obraId: entry.obraId,
-      obraNombre: entry.obraNombre,
-      contrato: entry.contrato,
-      usuario: entry.usuario,
-      usuarioNombre: entry.usuarioNombre,
-      iniciales: entry.iniciales,
-      rol: entry.rol,
-      seccion: entry.seccion,
-      plano: entry.plano,
-      estado: entry.estado,
-      gpsLat: entry.gpsLat,
-      gpsLng: entry.gpsLng,
-      gpsAcc: entry.gpsAcc,
-      gpsDentro: entry.gpsDentro,
-      gpsWarn: entry.gpsWarn,
-      ntpTs: entry.ntpTs,
-      ntpVerified: entry.ntpVerified,
-      sha256: entry.sha256,
-      capturedAt: entry.capturedAt,
-      nota: entry.nota || '',
-      comentarios: JSON.stringify(entry.comentarios || [])
+// Enviar como JSON con dataUrl base64
+    const payload = {
+      id:           entry.id,
+      obraId:       entry.obraId,
+      obraNombre:   entry.obraNombre,
+      contrato:     entry.contrato,
+      usuario:      entry.usuario,
+      usuarioNombre:entry.usuarioNombre,
+      iniciales:    entry.iniciales,
+      rol:          entry.rol,
+      seccion:      entry.seccion,
+      plano:        entry.plano,
+      estado:       entry.estado,
+      gpsLat:       entry.gpsLat,
+      gpsLng:       entry.gpsLng,
+      gpsAcc:       entry.gpsAcc,
+      gpsDentro:    entry.gpsDentro,
+      gpsWarn:      entry.gpsWarn,
+      ntpTs:        entry.ntpTs,
+      ntpVerified:  entry.ntpVerified,
+      sha256:       entry.sha256,
+      capturedAt:   entry.capturedAt,
+      nota:         entry.nota || '',
+      comentarios:  JSON.stringify(entry.comentarios || []),
+      dataUrl:      entry.dataUrl
     };
 
-    // Convertir dataUrl a Blob binario para FormData
-    const base64 = entry.dataUrl.split(',')[1];
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
-    const imgBlob = new Blob([bytes], {type:'image/jpeg'});
-
-    const fd = new FormData();
-    fd.append('foto', imgBlob, entry.id + '.jpg');
-    fd.append('meta', JSON.stringify(meta));
-
     const resp = await Promise.race([
-      fetch('https://script.google.com/macros/s/AKfycbzxtcNBm-Y2y6xfoBagYj4cd-NXBES0CyijEtLrs5TePh2dAe9m2TYve6X8InRQM8E1Ow/exec', {
+      fetch('https://script.google.com/macros/s/AKfycbw2bN66KazUD1nna3LdnXEgXTCn-366_x3-IlCziC73KA4EdN3bsTd2Koy4hjSfoag4og/exec', {
         method: 'POST',
-        body: fd
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
       }),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),120000))
+    
+          new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),120000))
     ]);
 
     if(!resp.ok) throw new Error('HTTP '+resp.status);
