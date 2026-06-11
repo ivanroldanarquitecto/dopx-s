@@ -1694,7 +1694,7 @@ async function intentarSync(entry){
     };
 
     const resp = await Promise.race([
-      fetch('https://script.google.com/macros/s/AKfycby8UQ533xAaXvvMQFqSk7NNRs0OwlSz_lpV7gBlbF0ySfg5stoZZjQ9G6DPvZvd0A/exec', {
+      fetch('https://script.google.com/macros/s/AKfycbzxtcNBm-Y2y6xfoBagYj4cd-NXBES0CyijEtLrs5TePh2dAe9m2TYve6X8InRQM8E1Ow/exec', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
