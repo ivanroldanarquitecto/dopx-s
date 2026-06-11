@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#6B1530">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DOPX.S — Supervisor Fotográfico</title>
+<style>
+  :root {
+    --guinda: #6B1530;
+    --guinda-dark: #4a0f21;
+    --guinda-light: #8b1d3e;
+    --gold: #C9A84C;
+    --white: #ffffff;
+    --gray-100: #f5f5f5;
+    --gray-200: #e8e8e8;
+    --gray-400: #aaaaaa;
+    --gray-600: #666666;
+    --gray-800: #333333;
+    --green: #2e7d32;
+    --green-light: #e8f5e9;
+    --red: #c62828;
+    --red-light: #ffebee;
+    --orange: #e65100;
+    --orange-light: #fff3e0;
+    --blue: #1565c0;
+    --blue-light: #e3f2fd;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --radius: 8px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--gray-100);
+    color: var(--gray-800);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: var(--guinda);
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .app-header svg { flex-shrink: 0; }
+  .app-header-text { flex: 1; }
+  .app-header-title { font-size: 14px; font-weight: 700; letter-spacing: 0.05em; }
+  .app-header-sub { font-size: 11px; opacity: 0.75; letter-spacing: 0.03em; }
+  .header-badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: calc(100vh - 56px); padding: 16px; }
+  .screen.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--guinda);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title-icon { font-size: 16px; }
+
+  /* ── FORM ELEMENTS ── */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-family: var(--font);
+    background: white;
+    color: var(--gray-800);
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--guinda);
+  }
+  .field textarea { resize: none; height: 80px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 20px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    text-decoration: none;
+    width: 100%;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary { background: var(--guinda); color: white; }
+  .btn-primary:hover { background: var(--guinda-dark); }
+  .btn-primary:disabled { background: var(--gray-400); cursor: not-allowed; }
+  .btn-secondary { background: white; color: var(--guinda); border: 1.5px solid var(--guinda); }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-ghost { background: transparent; color: var(--gray-600); border: 1.5px solid var(--gray-200); }
+  .btn-small { padding: 8px 14px; font-size: 12px; width: auto; }
+  .btn-gold { background: var(--gold); color: white; }
+
+  /* ── STATUS BADGES ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-orange { background: var(--orange-light); color: var(--orange); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-gray { background: var(--gray-200); color: var(--gray-600); }
+
+  /* ── STEP INDICATOR ── */
+  .step-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+  .step-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .step-dot.done { background: var(--guinda); color: white; }
+  .step-dot.active { background: var(--gold); color: white; box-shadow: 0 0 0 3px rgba(201,168,76,0.3); }
+  .step-dot.pending { background: var(--gray-200); color: var(--gray-400); }
+  .step-line { flex: 1; height: 2px; background: var(--gray-200); margin: 0 3px; }
+  .step-line.done { background: var(--guinda); }
+
+  /* ── GPS STATUS ── */
+  .gps-display {
+    background: var(--gray-100);
+    border-radius: var(--radius);
+    padding: 14px;
+    font-family: monospace;
+    font-size: 13px;
+    margin: 12px 0;
+  }
+  .gps-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .gps-label { color: var(--gray-600); font-size: 11px; }
+  .gps-val { font-weight: 600; }
+  .gps-ok { color: var(--green); }
+  .gps-warn { color: var(--orange); }
+  .gps-error { color: var(--red); }
+
+  /* ── CAMERA SECTION ── */
+  #camera-container {
+    position: relative;
+    background: #000;
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+    aspect-ratio: 4/3;
+  }
+  #camera-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .hud-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    padding: 10px;
+  }
+  .hud-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: rgba(255,255,255,0.7);
+    border-style: solid;
+  }
+  .hud-corner.tl { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+  .hud-corner.tr { top: 10px; right: 10px; border-width: 2px 2px 0 0; }
+  .hud-corner.bl { bottom: 10px; left: 10px; border-width: 0 0 2px 2px; }
+  .hud-corner.br { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+  .hud-top {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(107,21,48,0.85);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  .hud-bottom {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 10px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+  #shutter-btn {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: white;
+    border: 4px solid var(--guinda);
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.1s;
+  }
+  #shutter-btn:active { transform: scale(0.93); }
+  #shutter-btn-inner {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--guinda);
+    transition: background 0.1s;
+  }
+  #shutter-btn:active #shutter-btn-inner { background: var(--guinda-dark); }
+
+  /* ── PHOTO PREVIEW ── */
+  #photo-preview-img {
+    width: 100%;
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .meta-item {
+    background: var(--gray-100);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .meta-item-label { font-size: 10px; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+  .meta-item-val { font-size: 12px; font-weight: 600; color: var(--gray-800); word-break: break-all; }
+  .hash-box {
+    background: var(--gray-800);
+    color: #0f0;
+    font-family: monospace;
+    font-size: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    word-break: break-all;
+    margin-bottom: 12px;
+    letter-spacing: 0.04em;
+  }
+  .id-box {
+    background: var(--guinda);
+    color: white;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 10px 14px;
+    border-radius: 6px;
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── QUEUE LIST ── */
+  .queue-item {
+    background: white;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .queue-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: var(--gray-200);
+    flex-shrink: 0;
+  }
+  .queue-info { flex: 1; min-width: 0; }
+  .queue-id { font-size: 10px; font-family: monospace; font-weight: 700; color: var(--guinda); margin-bottom: 2px; word-break: break-all; }
+  .queue-meta { font-size: 11px; color: var(--gray-600); }
+
+  /* ── ADMIN PANEL ── */
+  .admin-tab-bar {
+    display: flex;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .admin-tab {
+    flex: 1;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .admin-tab.active { color: var(--guinda); border-bottom-color: var(--guinda); }
+  .admin-section { display: none; }
+  .admin-section.active { display: block; }
+
+  /* ── LIST ITEMS ── */
+  .list-item {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .list-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .list-item-body { flex: 1; min-width: 0; }
+  .list-item-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .list-item-sub { font-size: 11px; color: var(--gray-600); }
+  .list-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* ── OBRA SELECTOR ── */
+  .obra-card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid var(--guinda);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .obra-card:active { background: var(--gray-100); }
+  .obra-card-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .obra-card-contract { font-size: 11px; font-family: monospace; color: var(--guinda); margin-bottom: 6px; }
+  .obra-card-meta { font-size: 11px; color: var(--gray-600); display: flex; gap: 12px; }
+
+  /* ── SECTION SELECTOR ── */
+  .section-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .section-btn {
+    background: white;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .section-btn:active, .section-btn.selected {
+    background: var(--guinda);
+    border-color: var(--guinda);
+    color: white;
+  }
+  .section-btn-code { font-size: 18px; font-weight: 800; font-family: monospace; margin-bottom: 4px; }
+  .section-btn-name { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .section-btn-res { font-size: 9px; opacity: 0.6; margin-top: 2px; }
+  .section-btn.det-locked { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── ESTADO SELECTOR ── */
+  .estado-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .estado-btn {
+    background: white;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: all 0.2s;
+  }
+  .estado-btn.inicio.selected { background: var(--blue); border-color: var(--blue); color: white; }
+  .estado-btn.proceso.selected { background: var(--orange); border-color: var(--orange); color: white; }
+  .estado-btn.terminado.selected { background: var(--green); border-color: var(--green); color: white; }
+
+  /* ── AVANCE SELECTOR ── */
+  .avance-btn {
+    background: white;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+  .avance-btn.selected { background: var(--guinda); border-color: var(--guinda); color: white; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--gray-800);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    max-width: 320px;
+    text-align: center;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.success { background: var(--green); }
+  #toast.error { background: var(--red); }
+  #toast.warning { background: var(--orange); }
+
+  /* ── FAB MENU ── */
+  #fab-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 200;
+    display: none;
+  }
+  #fab-container.visible { display: block; }
+  #fab-main {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--guinda);
+    color: white;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+  #fab-main.open { transform: rotate(45deg); }
+  .fab-options {
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .fab-options.open { opacity: 1; pointer-events: all; }
+  .fab-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .fab-option-label {
+    background: var(--gray-800);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .fab-option-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+
+  /* ── LOGIN ── */
+  #screen-login {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: var(--guinda);
+    padding: 32px 24px;
+  }
+  .login-logo { margin-bottom: 8px; }
+  .login-title { color: white; font-size: 22px; font-weight: 800; letter-spacing: 0.04em; text-align: center; margin-bottom: 4px; }
+  .login-sub { color: rgba(255,255,255,0.7); font-size: 13px; text-align: center; margin-bottom: 32px; }
+  .login-card { background: white; border-radius: 16px; padding: 28px 24px; width: 100%; box-shadow: var(--shadow-lg); }
+  .login-card .field label { color: var(--gray-600); }
+
+  /* ── MISC ── */
+  .divider { height: 1px; background: var(--gray-200); margin: 14px 0; }
+  .text-center { text-align: center; }
+  .text-small { font-size: 12px; color: var(--gray-600); }
+  .text-mono { font-family: monospace; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mb-8 { margin-bottom: 8px; }
+  .mb-16 { margin-bottom: 16px; }
+  .flex-row { display: flex; align-items: center; gap: 8px; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .hidden { display: none !important; }
+  .full-width { width: 100%; }
+  .spinner {
+    width: 20px; height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .warning-box {
+    background: var(--orange-light);
+    border: 1px solid var(--orange);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--orange);
+    margin-bottom: 12px;
+  }
+  .info-box {
+    background: var(--blue-light);
+    border: 1px solid var(--blue);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--blue);
+    margin-bottom: 12px;
+  }
+  .success-box {
+    background: var(--green-light);
+    border: 1px solid var(--green);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+  .log-entry {
+    background: var(--gray-100);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+  .log-entry-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .log-entry-event { font-weight: 700; color: var(--red); }
+  .log-entry-time { color: var(--gray-600); font-family: monospace; }
+  .log-entry-detail { color: var(--gray-800); }
+</style>
+</head>
+<body>
+
+<!-- ════════════════ HEADER ════════════════ -->
+<header class="app-header" id="main-header" style="display:none">
+  <svg width="28" height="32" viewBox="0 0 28 32" fill="none">
+    <rect x="2" y="2" width="24" height="28" rx="3" fill="white" opacity="0.15"/>
+    <rect x="2" y="2" width="24" height="28" rx="3" stroke="white" stroke-width="1.5"/>
+    <rect x="6" y="8" width="16" height="2" rx="1" fill="white"/>
+    <rect x="6" y="13" width="12" height="2" rx="1" fill="white"/>
+    <rect x="6" y="18" width="14" height="2" rx="1" fill="white"/>
+    <circle cx="20" cy="23" r="5" fill="#C9A84C"/>
+    <path d="M17.5 23 L19.2 24.7 L22.5 21.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+  <div class="app-header-text">
+    <div class="app-header-title">DOPX.S</div>
+    <div class="app-header-sub" id="header-sub">Supervisor Fotográfico</div>
+  </div>
+  <div class="header-badge" id="header-role-badge"></div>
+</header>
+
+<!-- ════════════════ SCREEN: LOGIN ════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-logo">
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="32" r="30" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+      <path d="M32 14 L36 24 L48 24 L38 31 L42 42 L32 35 L22 42 L26 31 L16 24 L28 24 Z" fill="rgba(255,255,255,0.7)"/>
+      <circle cx="32" cy="32" r="6" fill="white" opacity="0.5"/>
+    </svg>
+  </div>
+  <div class="login-title">DOPX.S</div>
+  <div class="login-sub">H. Ayuntamiento de Xalapa<br>Dirección de Obras Públicas · 2026</div>
+  <div class="login-card">
+    <div class="card-title">
+      <span class="card-title-icon">🔐</span> Acceso al sistema
+    </div>
+    <div class="field">
+      <label>Número de contrato</label>
+      <input type="text" id="login-contrato" placeholder="OBR-2026-001" autocomplete="off" autocapitalize="characters">
+    </div>
+    <div class="field">
+      <label>PIN de acceso</label>
+      <input type="password" id="login-pin" placeholder="••••••" maxlength="6" inputmode="numeric">
+    </div>
+    <div id="login-error" class="warning-box hidden">Contrato o PIN incorrecto.</div>
+    <button class="btn btn-primary mt-8" onclick="doLogin()" id="btn-login">
+      Ingresar al sistema
+    </button>
+    <div class="text-small text-center mt-8" style="color:rgba(0,0,0,0.4)">
+      DOPX.S v1.0 · Uso institucional
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: SELECCIÓN DE OBRA ════════════════ -->
+<div id="screen-obras" class="screen">
+  <div class="card">
+    <div class="card-title"><span class="card-title-icon">📋</span> Obras asignadas</div>
+    <div id="obras-list"></div>
+  </div>
+  <button class="btn btn-ghost" onclick="doLogout()">Cerrar sesión</button>
+</div>
+
+<!-- ════════════════ SCREEN: CONFIGURACIÓN DE CAPTURA ════════════════ -->
+<div id="screen-config" class="screen">
+  <!-- Step bar -->
+  <div class="step-bar" id="step-bar">
+    <div class="step-dot done" id="step-1">✓</div>
+    <div class="step-line done"></div>
+    <div class="step-dot done" id="step-2">✓</div>
+    <div class="step-line done"></div>
+    <div class="step-dot active" id="step-3">3</div>
+    <div class="step-line"></div>
+    <div class="step-dot pending" id="step-4">4</div>
+    <div class="step-line"></div>
+    <div class="step-dot pending" id="step-5">5</div>
+    <div class="step-line"></div>
+    <div class="step-dot pending" id="step-6">6</div>
+    <div class="step-line"></div>
+    <div class="step-dot pending" id="step-7">7</div>
+  </div>
+
+  <!-- Paso 3: Versión de plano -->
+  <div id="config-step-plano">
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">📐</span> Paso 3 — Versión de plano</div>
+      <div class="field">
+        <label>Versión activa</label>
+        <select id="select-plano">
+          <option value="">— Seleccionar versión —</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="confirmarPlano()">Confirmar versión</button>
+    </div>
+  </div>
+
+  <!-- Paso 4: Sección -->
+  <div id="config-step-seccion" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">🏗️</span> Paso 4 — Sección constructiva</div>
+      <div class="section-grid" id="section-grid">
+        <div class="section-btn" onclick="selectSection('EST')" id="sec-EST">
+          <div class="section-btn-code">EST</div>
+          <div class="section-btn-name">Estructural</div>
+          <div class="section-btn-res">2 MP</div>
+        </div>
+        <div class="section-btn" onclick="selectSection('ARQ')" id="sec-ARQ">
+          <div class="section-btn-code">ARQ</div>
+          <div class="section-btn-name">Arquitectónica</div>
+          <div class="section-btn-res">2 MP</div>
+        </div>
+        <div class="section-btn" onclick="selectSection('INST')" id="sec-INST">
+          <div class="section-btn-code">INST</div>
+          <div class="section-btn-name">Instalaciones</div>
+          <div class="section-btn-res">2 MP</div>
+        </div>
+        <div class="section-btn" onclick="selectSection('EXT')" id="sec-EXT">
+          <div class="section-btn-code">EXT</div>
+          <div class="section-btn-name">Exteriores</div>
+          <div class="section-btn-res">2 MP</div>
+        </div>
+        <div class="section-btn det-locked" id="sec-DET" onclick="alertDetLocked()">
+          <div class="section-btn-code">DET</div>
+          <div class="section-btn-name">Detalle</div>
+          <div class="section-btn-res">3 MP · Sup.</div>
+        </div>
+      </div>
+      <button class="btn btn-primary hidden" id="btn-confirmar-seccion" onclick="confirmarSeccion()">Confirmar sección</button>
+    </div>
+  </div>
+
+  <!-- Paso 5: Estado de avance -->
+  <div id="config-step-estado" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">📊</span> Paso 5 — Estado de avance</div>
+      <div class="estado-grid">
+        <div class="estado-btn inicio" onclick="selectEstado('INICIO')" id="est-INICIO">INICIO</div>
+        <div class="estado-btn proceso" onclick="selectEstado('PROCESO')" id="est-PROCESO">PROCESO</div>
+        <div class="estado-btn terminado" onclick="selectEstado('TERMINADO')" id="est-TERMINADO">TERMINADO</div>
+      </div>
+      <button class="btn btn-primary hidden" id="btn-confirmar-estado" onclick="irAGPS()">Confirmar estado</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: GPS ════════════════ -->
+<div id="screen-gps" class="screen">
+  <div class="step-bar">
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot active">6</div><div class="step-line"></div>
+    <div class="step-dot pending">7</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="card-title-icon">📍</span> Paso 6 — Verificación GPS</div>
+    <div id="gps-status-box" class="info-box">Obteniendo ubicación...</div>
+    <div class="gps-display" id="gps-display">
+      <div class="gps-row"><span class="gps-label">LATITUD</span><span class="gps-val" id="gps-lat">—</span></div>
+      <div class="gps-row"><span class="gps-label">LONGITUD</span><span class="gps-val" id="gps-lng">—</span></div>
+      <div class="gps-row"><span class="gps-label">PRECISIÓN</span><span class="gps-val" id="gps-acc">—</span></div>
+      <div class="gps-row"><span class="gps-label">ESTADO</span><span class="gps-val" id="gps-estado">Esperando...</span></div>
+    </div>
+    <button class="btn btn-primary hidden" id="btn-activar-camara" onclick="activarCamara()">
+      ✓ Activar cámara
+    </button>
+    <button class="btn btn-ghost hidden mt-8" id="btn-omitir-gps" onclick="omitirGPS()">
+      ⚠ Omitir GPS (modo prueba)
+    </button>
+    <button class="btn btn-ghost mt-8" onclick="showScreen('screen-config')">← Volver</button>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: CÁMARA ════════════════ -->
+<div id="screen-camara" class="screen">
+  <div class="step-bar">
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot done">✓</div><div class="step-line done"></div>
+    <div class="step-dot active">7</div>
+  </div>
+  <div id="camera-container">
+    <video id="camera-preview" autoplay playsinline muted></video>
+    <div class="hud-overlay">
+      <div class="hud-corner tl"></div>
+      <div class="hud-corner tr"></div>
+      <div class="hud-corner bl"></div>
+      <div class="hud-corner br"></div>
+      <div class="hud-top" id="hud-obra-label">OBRA · SECCIÓN</div>
+      <div class="hud-bottom">
+        <span id="hud-ts">Obteniendo timestamp...</span>
+        <span id="hud-gps">GPS ✓</span>
+      </div>
+    </div>
+  </div>
+  <canvas id="capture-canvas" style="display:none"></canvas>
+  <div id="shutter-btn" onclick="disparo()">
+    <div id="shutter-btn-inner"></div>
+  </div>
+  <div class="card">
+    <div class="flex-between">
+      <span class="text-small">Sección: <strong id="cam-seccion-label"></strong></span>
+      <span class="text-small">Plano: <strong id="cam-plano-label"></strong></span>
+    </div>
+    <div class="divider"></div>
+    <div class="flex-between">
+      <span class="text-small">Estado: <strong id="cam-estado-label"></strong></span>
+      <span id="cam-ntpbadge" class="badge badge-blue">NTP OK</span>
+    </div>
+  </div>
+  <button class="btn btn-ghost" onclick="detenerCamara(); showScreen('screen-config')">← Volver</button>
+</div>
+
+<!-- ════════════════ SCREEN: CONFIRMACIÓN FOTO ════════════════ -->
+<div id="screen-confirm" class="screen">
+  <div class="card">
+    <div class="card-title"><span class="card-title-icon">✅</span> Confirmación de captura</div>
+    <img id="photo-preview-img" src="" alt="Foto capturada">
+    <div class="id-box" id="confirm-id"></div>
+    <div class="meta-grid">
+      <div class="meta-item"><div class="meta-item-label">Obra</div><div class="meta-item-val" id="confirm-obra"></div></div>
+      <div class="meta-item"><div class="meta-item-label">Sección</div><div class="meta-item-val" id="confirm-seccion"></div></div>
+      <div class="meta-item"><div class="meta-item-label">Plano</div><div class="meta-item-val" id="confirm-plano"></div></div>
+      <div class="meta-item"><div class="meta-item-label">Estado</div><div class="meta-item-val" id="confirm-estado"></div></div>
+      <div class="meta-item"><div class="meta-item-label">Timestamp</div><div class="meta-item-val" id="confirm-ts"></div></div>
+      <div class="meta-item"><div class="meta-item-label">GPS</div><div class="meta-item-val" id="confirm-gps"></div></div>
+    </div>
+    <div class="hash-box">
+      <div style="font-size:9px;opacity:0.6;margin-bottom:4px">SHA-256</div>
+      <div id="confirm-hash"></div>
+    </div>
+    <div id="confirm-ntpwarn" class="warning-box hidden">⚠ Timestamp pendiente — se asignará al sincronizar</div>
+  </div>
+
+  <!-- Comentario/bandera del capturista -->
+  <div class="card">
+    <div class="card-title"><span class="card-title-icon">💬</span> Observación (opcional)</div>
+    <div class="field">
+      <select id="flag-tipo">
+        <option value="">— Sin observación —</option>
+        <option value="DESENFOCADA">Foto desenfocada</option>
+        <option value="OBSTRUIDA">Vista obstruida</option>
+        <option value="ENCUADRE">Error de encuadre</option>
+        <option value="OTRO">Otro motivo</option>
+      </select>
+    </div>
+    <div class="field hidden" id="flag-texto-field">
+      <label>Detalle</label>
+      <textarea id="flag-texto" placeholder="Describe el problema..."></textarea>
+    </div>
+  </div>
+
+  <div class="flex-row">
+    <button class="btn btn-primary" style="flex:2" onclick="guardarFoto()">Guardar y continuar</button>
+    <button class="btn btn-ghost" style="flex:1" onclick="descartarFoto()">Descartar</button>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: COLA DE SINCRONIZACIÓN ════════════════ -->
+<div id="screen-queue" class="screen">
+  <div class="card">
+    <div class="card-title"><span class="card-title-icon">☁️</span> Cola de sincronización</div>
+    <div id="queue-stats" class="flex-between mb-8">
+      <span class="text-small">Pendientes: <strong id="queue-count">0</strong></span>
+      <span id="queue-online-badge" class="badge badge-gray">Sin conexión</span>
+    </div>
+    <button class="btn btn-primary mb-8" id="btn-sync-now" onclick="syncNow()">Sincronizar ahora</button>
+    <div id="queue-list"></div>
+    <div id="queue-empty" class="text-center text-small" style="padding:20px;color:var(--gray-400)">
+      Cola vacía — todas las fotos están sincronizadas
+    </div>
+  </div>
+  <button class="btn btn-ghost" onclick="volverDeQueue()">← Volver</button>
+</div>
+
+<!-- ════════════════ SCREEN: LOG DE EVENTOS ════════════════ -->
+<div id="screen-log" class="screen">
+  <div class="card">
+    <div class="card-title"><span class="card-title-icon">🔴</span> Log de eventos — Supervisor</div>
+    <div id="events-log-list"></div>
+    <div id="events-log-empty" class="text-center text-small" style="padding:20px;color:var(--gray-400)">
+      Sin eventos negativos registrados
+    </div>
+  </div>
+  <button class="btn btn-ghost" onclick="volverDeLog()">← Volver</button>
+</div>
+
+<!-- ════════════════ SCREEN: PANEL DE ADMINISTRACIÓN ════════════════ -->
+<div id="screen-admin" class="screen">
+  <div class="admin-tab-bar">
+    <div class="admin-tab active" onclick="adminTab('obras')">Obras</div>
+    <div class="admin-tab" onclick="adminTab('planos')">Planos</div>
+    <div class="admin-tab" onclick="adminTab('usuarios')">Usuarios</div>
+    <div class="admin-tab" onclick="adminTab('comentarios')">Fotos</div>
+  </div>
+
+  <!-- Obras -->
+  <div class="admin-section active" id="admin-obras">
+    <div class="card">
+      <div class="card-title">Registrar nueva obra</div>
+      <div class="field"><label>Nombre de la obra</label><input type="text" id="adm-obra-nombre" placeholder="Pavimentación Calle Bravo"></div>
+      <div class="field"><label>Número de contrato</label><input type="text" id="adm-obra-contrato" placeholder="OBR-2026-001"></div>
+      <div class="field"><label>Contratista</label><input type="text" id="adm-obra-contratista" placeholder="Constructora XYZ"></div>
+      <div class="field"><label>Polígono GPS (GeoJSON)</label><textarea id="adm-obra-poligono" placeholder='{"type":"Polygon","coordinates":[...]}'></textarea></div>
+      <div class="field"><label>Estado</label>
+        <select id="adm-obra-estado">
+          <option value="activa">Activa</option>
+          <option value="inactiva">Inactiva</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="adminGuardarObra()">Guardar obra</button>
+    </div>
+    <div id="admin-obras-list"></div>
+  </div>
+
+  <!-- Planos -->
+  <div class="admin-section" id="admin-planos">
+    <div class="card">
+      <div class="card-title">Activar versión de plano</div>
+      <div class="field"><label>Obra</label>
+        <select id="adm-plano-obra">
+          <option value="">— Seleccionar obra —</option>
+        </select>
+      </div>
+      <div class="field"><label>Clave de versión</label><input type="text" id="adm-plano-version" placeholder="v03 · Arq. Fachada Norte"></div>
+      <div class="field"><label>Fuente (Planeación y Proyectos)</label><input type="text" id="adm-plano-fuente" placeholder="PP-2026-003"></div>
+      <button class="btn btn-primary" onclick="adminGuardarPlano()">Activar versión</button>
+    </div>
+    <div id="admin-planos-list"></div>
+  </div>
+
+  <!-- Usuarios -->
+  <div class="admin-section" id="admin-usuarios">
+    <div class="card">
+      <div class="card-title">Registrar usuario</div>
+      <div class="field"><label>Nombre completo</label><input type="text" id="adm-usr-nombre" placeholder="José Ramírez Morales"></div>
+      <div class="field"><label>Iniciales (para ID de foto)</label><input type="text" id="adm-usr-iniciales" placeholder="JRM" maxlength="3"></div>
+      <div class="field"><label>Número de contrato</label><input type="text" id="adm-usr-contrato" placeholder="OBR-2026-001"></div>
+      <div class="field"><label>PIN (6 dígitos)</label><input type="text" id="adm-usr-pin" placeholder="123456" maxlength="6" inputmode="numeric"></div>
+      <div class="field"><label>Rol</label>
+        <select id="adm-usr-rol">
+          <option value="capturista">Capturista</option>
+          <option value="supervisor">Supervisor</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <div class="field"><label>Obra asignada</label>
+        <select id="adm-usr-obra">
+          <option value="">— Seleccionar obra —</option>
+        </select>
+      </div>
+      <div class="field"><label>DET habilitado</label>
+        <select id="adm-usr-det">
+          <option value="no">No</option>
+          <option value="si">Sí</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="adminGuardarUsuario()">Registrar usuario</button>
+    </div>
+    <div id="admin-usuarios-list"></div>
+  </div>
+
+  <!-- Comentarios sobre fotos -->
+  <div class="admin-section" id="admin-comentarios">
+    <div class="card">
+      <div class="card-title">Buscar foto por ID</div>
+      <div class="field"><input type="text" id="adm-foto-buscar" placeholder="DOPX_OBR01_20260502_EST_JRM_004_v03"></div>
+      <button class="btn btn-primary" onclick="adminBuscarFoto()">Buscar</button>
+    </div>
+    <div id="admin-foto-resultado" class="hidden">
+      <div class="card">
+        <div class="card-title">Resultado</div>
+        <div id="admin-foto-info"></div>
+        <div class="divider"></div>
+        <div class="card-title">Comentarios existentes</div>
+        <div id="admin-foto-comentarios"></div>
+        <div class="divider"></div>
+        <div class="card-title">Añadir comentario supervisor</div>
+        <div class="field">
+          <select id="adm-com-tipo">
+            <option value="OBSERVACION">Observación</option>
+            <option value="NO_ACEPTABLE">No aceptable</option>
+            <option value="VERIFICADO">Verificado</option>
+          </select>
+        </div>
+        <div class="field">
+          <textarea id="adm-com-texto" placeholder="Descripción del comentario..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="adminGuardarComentario()">Guardar comentario</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-16">
+    <button class="btn btn-ghost" onclick="showScreen('screen-obras')">← Volver a obras</button>
+  </div>
+</div>
+
+<!-- ════════════════ FAB ════════════════ -->
+<div id="fab-container">
+  <div class="fab-options" id="fab-options">
+    <div class="fab-option" onclick="irAQueue()">
+      <div class="fab-option-label">Cola sync (<span id="fab-queue-count">0</span>)</div>
+      <button class="fab-option-btn" style="background:var(--blue);color:white">☁</button>
+    </div>
+    <div class="fab-option" id="fab-log-option" style="display:none" onclick="irALog()">
+      <div class="fab-option-label">Log de eventos</div>
+      <button class="fab-option-btn" style="background:var(--red);color:white">🔴</button>
+    </div>
+    <div class="fab-option" id="fab-admin-option" style="display:none" onclick="irAAdmin()">
+      <div class="fab-option-label">Administración</div>
+      <button class="fab-option-btn" style="background:var(--gold);color:white">⚙</button>
+    </div>
+  </div>
+  <button id="fab-main" onclick="toggleFab()">+</button>
+</div>
+
+<!-- ════════════════ TOAST ════════════════ -->
+<div id="toast"></div>
+
+<!-- ════════════════ SERVICE WORKER REGISTRATION ════════════════ -->
+<script>
+if('serviceWorker' in navigator){
+  const swCode = `
+    const CACHE='dopx-s-v1';
+    const ASSETS=['/'];
+    self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
+    self.addEventListener('fetch',e=>{
+      if(e.request.method!=='GET')return;
+      e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));
+    });
+  `;
+  const blob = new Blob([swCode],{type:'application/javascript'});
+  const url = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(()=>{});
+}
+</script>
+
+<!-- ════════════════ APP LOGIC ════════════════ -->
+<script>
+'use strict';
+
+// ── ESTADO GLOBAL ──────────────────────────────────────────────
+const APP = {
+  usuario: null,       // {contrato, pin, nombre, iniciales, rol, obraId, detHabilitado}
+  obra: null,          // {id, nombre, contrato, contratista, poligono, estado}
+  plano: null,         // {version, fuente}
+  seccion: null,       // 'EST'|'ARQ'|'INST'|'EXT'|'DET'
+  estado: null,        // 'INICIO'|'PROCESO'|'TERMINADO'
+  gps: null,           // {lat, lng, acc, inside, warn}
+  ntpTs: null,         // timestamp string o null
+  ntpVerified: false,
+  fotoBlob: null,
+  fotoDataUrl: null,
+  fotoHash: null,
+  fotoId: null,
+  fotoMeta: null,
+  sesionSeq: 0,        // contador de fotos en sesión
+  screenHistory: [],
+  camStream: null,
+};
+
+// ── BASE DE DATOS LOCAL (IndexedDB) ───────────────────────────
+let DB = null;
+function initDB(){
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open('dopx_s',3);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains('usuarios')) db.createObjectStore('usuarios',{keyPath:'contrato'});
+      if(!db.objectStoreNames.contains('obras')) db.createObjectStore('obras',{keyPath:'id'});
+      if(!db.objectStoreNames.contains('planos')) db.createObjectStore('planos',{keyPath:'key'}); // key = obraId+version
+      if(!db.objectStoreNames.contains('queue')) db.createObjectStore('queue',{keyPath:'id',autoIncrement:true});
+      if(!db.objectStoreNames.contains('eventos')) db.createObjectStore('eventos',{keyPath:'id',autoIncrement:true});
+      if(!db.objectStoreNames.contains('comentarios')) db.createObjectStore('comentarios',{keyPath:'id',autoIncrement:true});
+    };
+    req.onsuccess = e => { DB = e.target.result; res(DB); };
+    req.onerror = () => rej(req.error);
+  });
+}
+function dbGet(store,key){ return new Promise((res,rej)=>{ const t=DB.transaction(store,'readonly'); const r=t.objectStore(store).get(key); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function dbPut(store,obj){ return new Promise((res,rej)=>{ const t=DB.transaction(store,'readwrite'); const r=t.objectStore(store).put(obj); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function dbGetAll(store){ return new Promise((res,rej)=>{ const t=DB.transaction(store,'readonly'); const r=t.objectStore(store).getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function dbDelete(store,key){ return new Promise((res,rej)=>{ const t=DB.transaction(store,'readwrite'); const r=t.objectStore(store).delete(key); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
+
+// ── DATOS DE DEMO (simulan Google Sheet) ────────────────────────
+async function seedDemoData(){
+  const demoUsers = [
+    {contrato:'OBR-2026-001',pin:'123456',nombre:'José Ramírez Morales',iniciales:'JRM',rol:'capturista',obraId:'OBR01',detHabilitado:false},
+    {contrato:'SUPER-001',pin:'999999',nombre:'Arq. Luis Torres',iniciales:'LTO',rol:'supervisor',obraId:'OBR01',detHabilitado:true},
+    {contrato:'ADMIN-001',pin:'000000',nombre:'Administrador DOPX',iniciales:'ADM',rol:'admin',obraId:null,detHabilitado:true},
+  ];
+  const demoObras = [
+    {id:'OBR01',nombre:'Pavimentación Calle Bravo',contrato:'OBR-2026-001',contratista:'Constructora Xalapeña SA',
+     poligono:{type:'Circle',lat:19.5338,lng:-96.9102,r:200},estado:'activa'},
+    {id:'OBR02',nombre:'Repavimentación Av. Lázaro Cárdenas',contrato:'OBR-2026-002',contratista:'Vialidad MX SA',
+     poligono:{type:'Circle',lat:19.5400,lng:-96.9200,r:150},estado:'activa'},
+  ];
+  const demoPlanos = [
+    {key:'OBR01_v01',obraId:'OBR01',version:'v01 — Planta Baja General',fuente:'PP-2026-001',activo:false},
+    {key:'OBR01_v02',obraId:'OBR01',version:'v02 — Detalle Estructural',fuente:'PP-2026-002',activo:false},
+    {key:'OBR01_v03',obraId:'OBR01',version:'v03 — Corte Transversal',fuente:'PP-2026-003',activo:true},
+    {key:'OBR02_v01',obraId:'OBR02',version:'v01 — Planta General',fuente:'PP-2026-004',activo:true},
+  ];
+  for(const u of demoUsers){ const ex=await dbGet('usuarios',u.contrato); if(!ex) await dbPut('usuarios',u); }
+  for(const o of demoObras){ const ex=await dbGet('obras',o.id); if(!ex) await dbPut('obras',o); }
+  for(const p of demoPlanos){ const ex=await dbGet('planos',p.key); if(!ex) await dbPut('planos',p); }
+}
+
+// ── PANTALLAS ────────────────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const showHeader = id !== 'screen-login';
+  document.getElementById('main-header').style.display = showHeader ? 'flex' : 'none';
+  const showFab = !['screen-login','screen-login'].includes(id) && APP.usuario;
+  document.getElementById('fab-container').classList.toggle('visible', !!showFab && id !== 'screen-login');
+  window.scrollTo(0,0);
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────
+async function doLogin(){
+  const contrato = document.getElementById('login-contrato').value.trim().toUpperCase();
+  const pin = document.getElementById('login-pin').value.trim();
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+  if(!contrato || !pin){ toast('Ingresa contrato y PIN','error'); return; }
+  const btn = document.getElementById('btn-login');
+  btn.innerHTML = '<div class="spinner"></div>';
+  btn.disabled = true;
+  try {
+    const user = await dbGet('usuarios', contrato);
+    if(!user || user.pin !== pin){
+      errEl.classList.remove('hidden');
+      registrarEvento('LOGIN_FALLIDO',`Intento fallido: contrato ${contrato}`);
+    } else {
+      APP.usuario = user;
+      document.getElementById('header-role-badge').textContent = user.rol.toUpperCase();
+      document.getElementById('header-sub').textContent = user.nombre;
+      // Mostrar opciones según rol
+      if(user.rol==='supervisor'||user.rol==='admin'){
+        document.getElementById('fab-log-option').style.display='flex';
+      }
+      if(user.rol==='admin'){
+        document.getElementById('fab-admin-option').style.display='flex';
+      }
+      await cargarObras();
+      showScreen('screen-obras');
+      toast('Bienvenido, '+user.nombre.split(' ')[0],'success');
+    }
+  } catch(e){
+    toast('Error al verificar credenciales','error');
+  }
+  btn.innerHTML='Ingresar al sistema';
+  btn.disabled=false;
+}
+
+function doLogout(){
+  APP.usuario=null; APP.obra=null; APP.plano=null; APP.seccion=null;
+  APP.estado=null; APP.gps=null; APP.fotoBlob=null; APP.sesionSeq=0;
+  document.getElementById('login-contrato').value='';
+  document.getElementById('login-pin').value='';
+  if(APP.camStream){ APP.camStream.getTracks().forEach(t=>t.stop()); APP.camStream=null; }
+  document.getElementById('fab-log-option').style.display='none';
+  document.getElementById('fab-admin-option').style.display='none';
+  showScreen('screen-login');
+}
+
+// ── OBRAS ──────────────────────────────────────────────────────────
+async function cargarObras(){
+  const todas = await dbGetAll('obras');
+  let visibles;
+  if(APP.usuario.rol==='admin'||APP.usuario.rol==='supervisor'){
+    visibles = todas.filter(o=>o.estado==='activa');
+  } else {
+    visibles = todas.filter(o=>o.id===APP.usuario.obraId && o.estado==='activa');
+  }
+  const el = document.getElementById('obras-list');
+  if(visibles.length===0){ el.innerHTML='<div class="text-small text-center" style="padding:20px;color:var(--gray-400)">Sin obras activas asignadas</div>'; return; }
+  el.innerHTML = visibles.map(o=>`
+    <div class="obra-card" onclick="seleccionarObra('${o.id}')">
+      <div class="obra-card-name">${o.nombre}</div>
+      <div class="obra-card-contract">${o.contrato}</div>
+      <div class="obra-card-meta">
+        <span>🏗 ${o.contratista}</span>
+        <span class="badge ${o.estado==='activa'?'badge-green':'badge-gray'}">${o.estado}</span>
+      </div>
+    </div>`).join('');
+}
+
+async function seleccionarObra(id){
+  const obra = await dbGet('obras',id);
+  APP.obra = obra;
+  // Cargar planos de esta obra
+  const todosPlanos = await dbGetAll('planos');
+  const planosObra = todosPlanos.filter(p=>p.obraId===id);
+  const select = document.getElementById('select-plano');
+  select.innerHTML = '<option value="">— Seleccionar versión —</option>';
+  planosObra.forEach(p=>{
+    const opt = document.createElement('option');
+    opt.value = p.version;
+    opt.textContent = p.version + (p.activo?' ✓ (activa)':'');
+    select.appendChild(opt);
+  });
+  // Det habilitado?
+  const secDet = document.getElementById('sec-DET');
+  if(APP.usuario.detHabilitado){
+    secDet.classList.remove('det-locked');
+    secDet.onclick = ()=>selectSection('DET');
+  }
+  resetConfigSteps();
+  showScreen('screen-config');
+}
+
+// ── PASOS DE CONFIGURACIÓN ────────────────────────────────────────
+function resetConfigSteps(){
+  document.getElementById('config-step-plano').classList.remove('hidden');
+  document.getElementById('config-step-seccion').classList.add('hidden');
+  document.getElementById('config-step-estado').classList.add('hidden');
+  APP.plano=null; APP.seccion=null; APP.estado=null;
+  updateStepBar(3);
+}
+
+function confirmarPlano(){
+  const val = document.getElementById('select-plano').value;
+  if(!val){ toast('Selecciona una versión de plano','error'); return; }
+  APP.plano = val;
+  document.getElementById('config-step-plano').classList.add('hidden');
+  document.getElementById('config-step-seccion').classList.remove('hidden');
+  updateStepBar(4);
+}
+
+function selectSection(sec){
+  APP.seccion = sec;
+  document.querySelectorAll('.section-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('sec-'+sec).classList.add('selected');
+  document.getElementById('btn-confirmar-seccion').classList.remove('hidden');
+}
+
+function alertDetLocked(){ toast('DET requiere habilitación del supervisor','warning'); }
+
+function confirmarSeccion(){
+  if(!APP.seccion){ toast('Selecciona una sección','error'); return; }
+  document.getElementById('config-step-seccion').classList.add('hidden');
+  document.getElementById('config-step-estado').classList.remove('hidden');
+  updateStepBar(5);
+}
+
+function selectEstado(est){
+  APP.estado = est;
+  document.querySelectorAll('.estado-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('est-'+est).classList.add(est.toLowerCase(),'selected');
+  document.getElementById('btn-confirmar-estado').classList.remove('hidden');
+}
+
+function irAGPS(){
+  if(!APP.estado){ toast('Selecciona un estado de avance','error'); return; }
+  updateStepBar(6);
+  showScreen('screen-gps');
+  iniciarGPS();
+}
+
+function updateStepBar(activeStep){
+  for(let i=1;i<=7;i++){
+    const el = document.getElementById('step-'+i);
+    if(!el) continue;
+    el.className = 'step-dot ' + (i<activeStep?'done':i===activeStep?'active':'pending');
+    el.textContent = i<activeStep?'✓':String(i);
+  }
+}
+
+// ── GPS ────────────────────────────────────────────────────────────
+function iniciarGPS(){
+  const statusBox = document.getElementById('gps-status-box');
+  statusBox.className = 'info-box';
+  statusBox.textContent = 'Obteniendo ubicación GPS...';
+  document.getElementById('btn-activar-camara').classList.add('hidden');
+  if(esModoDemo()){
+    document.getElementById('btn-omitir-gps').classList.remove('hidden');
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => procesarGPS(pos),
+    err => {
+      statusBox.className = 'warning-box';
+      statusBox.textContent = 'No se pudo obtener GPS: ' + err.message;
+      registrarEvento('GPS_ERROR', err.message);
+    },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:0}
+  );
+}
+
+const DEMO_CONTRATOS = ['OBR-2026-001','SUPER-001','ADMIN-001'];
+function esModoDemo(){ return APP.usuario && DEMO_CONTRATOS.includes(APP.usuario.contrato); }
+
+function omitirGPS(){
+  APP.gps = {lat:19.5338, lng:-96.9102, acc:8, inside:true, warn:false, demo:true};
+  const statusBox = document.getElementById('gps-status-box');
+  statusBox.className = 'warning-box';
+  statusBox.textContent = '⚠ GPS omitido — modo prueba. Coordenadas simuladas.';
+  document.getElementById('gps-lat').textContent = APP.gps.lat.toFixed(6);
+  document.getElementById('gps-lng').textContent = APP.gps.lng.toFixed(6);
+  document.getElementById('gps-acc').textContent = '8.0 m (simulado)';
+  document.getElementById('gps-estado').innerHTML = '<span class="gps-warn">SIMULADO · MODO PRUEBA</span>';
+  document.getElementById('btn-activar-camara').classList.remove('hidden');
+  document.getElementById('btn-omitir-gps').classList.add('hidden');
+}
+
+function procesarGPS(pos){
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+  const acc = pos.coords.accuracy;
+  document.getElementById('gps-lat').textContent = lat.toFixed(6);
+  document.getElementById('gps-lng').textContent = lng.toFixed(6);
+  document.getElementById('gps-acc').textContent = acc.toFixed(1)+' m';
+  const inside = verificarPoligono(lat, lng, APP.obra.poligono);
+  const warn = acc > 15;
+  APP.gps = {lat,lng,acc,inside,warn};
+  const statusBox = document.getElementById('gps-status-box');
+  const estadoEl = document.getElementById('gps-estado');
+  if(!inside){
+    statusBox.className = 'warning-box';
+    statusBox.textContent = '⛔ Ubicación fuera del perímetro de obra. Cámara bloqueada.';
+    estadoEl.innerHTML = '<span class="gps-error">FUERA DEL POLÍGONO</span>';
+    registrarEvento('GPS_FUERA_POLIGONO',`${lat},${lng} · Obra:${APP.obra.id}`);
+    document.getElementById('btn-activar-camara').classList.add('hidden');
+  } else if(warn){
+    statusBox.className = 'warning-box';
+    statusBox.textContent = `⚠ Dentro del polígono. Precisión ${acc.toFixed(0)}m > 15m — advertencia registrada.`;
+    estadoEl.innerHTML = '<span class="gps-warn">DENTRO · PRECISIÓN BAJA</span>';
+    registrarEvento('GPS_PRECISION_BAJA',`Precisión ${acc.toFixed(0)}m en obra ${APP.obra.id}`);
+    document.getElementById('btn-activar-camara').classList.remove('hidden');
+  } else {
+    statusBox.className = 'success-box';
+    statusBox.textContent = `✓ Dentro del polígono. Precisión ${acc.toFixed(0)}m — OK.`;
+    estadoEl.innerHTML = '<span class="gps-ok">DENTRO DEL POLÍGONO ✓</span>';
+    document.getElementById('btn-activar-camara').classList.remove('hidden');
+  }
+}
+
+function verificarPoligono(lat, lng, poligono){
+  if(!poligono) return true; // Sin polígono: se permite (polígono provisional)
+  if(poligono.type==='Circle'){
+    const d = haversine(lat,lng,poligono.lat,poligono.lng);
+    return d <= poligono.r;
+  }
+  if(poligono.type==='Polygon'){
+    return puntoDentroPoligono(lat,lng,poligono.coordinates[0]);
+  }
+  return true;
+}
+
+function haversine(lat1,lng1,lat2,lng2){
+  const R=6371000, r=Math.PI/180;
+  const dLat=(lat2-lat1)*r, dLng=(lng2-lng1)*r;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function puntoDentroPoligono(lat,lng,coords){
+  let inside=false;
+  for(let i=0,j=coords.length-1;i<coords.length;j=i++){
+    const xi=coords[i][1],yi=coords[i][0],xj=coords[j][1],yj=coords[j][0];
+    if(((yi>lat)!==(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+
+// ── CÁMARA ────────────────────────────────────────────────────────
+async function activarCamara(){
+  updateStepBar(7);
+  showScreen('screen-camara');
+  const res = APP.seccion==='DET' ? {width:2048,height:1536} : {width:1600,height:1200};
+  try {
+    APP.camStream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'environment',width:{ideal:res.width},height:{ideal:res.height}},
+      audio:false
+    });
+    document.getElementById('camera-preview').srcObject = APP.camStream;
+    document.getElementById('hud-obra-label').textContent = `${APP.obra.id} · ${APP.seccion}`;
+    document.getElementById('cam-seccion-label').textContent = APP.seccion;
+    document.getElementById('cam-plano-label').textContent = APP.plano.split('—')[0].trim();
+    document.getElementById('cam-estado-label').textContent = APP.estado;
+    // HUD GPS
+    document.getElementById('hud-gps').textContent = APP.gps?.inside ? 'GPS ✓' : 'GPS ⚠';
+    // Obtener NTP
+    obtenerNTP();
+  } catch(e){
+    toast('No se pudo acceder a la cámara: '+e.message,'error');
+    registrarEvento('CAMARA_ERROR',e.message);
+    showScreen('screen-gps');
+  }
+}
+
+async function obtenerNTP(){
+  const badge = document.getElementById('cam-ntpbadge');
+  try {
+    const r = await Promise.race([
+      fetch('https://worldtimeapi.org/api/timezone/America/Mexico_City'),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000))
+    ]);
+    if(!r.ok) throw new Error('NTP error');
+    const data = await r.json();
+    APP.ntpTs = data.datetime;
+    APP.ntpVerified = true;
+    badge.className = 'badge badge-green';
+    badge.textContent = 'NTP ✓';
+    document.getElementById('hud-ts').textContent = new Date(APP.ntpTs).toLocaleTimeString('es-MX');
+  } catch(e){
+    APP.ntpTs = null;
+    APP.ntpVerified = false;
+    badge.className = 'badge badge-orange';
+    badge.textContent = 'NTP PENDIENTE';
+    document.getElementById('hud-ts').textContent = 'Timestamp pendiente';
+  }
+}
+
+function detenerCamara(){
+  if(APP.camStream){ APP.camStream.getTracks().forEach(t=>t.stop()); APP.camStream=null; }
+  const v = document.getElementById('camera-preview'); v.srcObject=null;
+}
+
+// ── DISPARO ────────────────────────────────────────────────────────
+async function disparo(){
+  const video = document.getElementById('camera-preview');
+  const canvas = document.getElementById('capture-canvas');
+  const w = video.videoWidth || 1600;
+  const h = video.videoHeight || 1200;
+  canvas.width=w; canvas.height=h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video,0,0,w,h);
+  // Obtener blob
+  canvas.toBlob(async blob=>{
+    APP.fotoBlob = blob;
+    APP.fotoDataUrl = canvas.toDataURL('image/jpeg',0.9);
+    // SHA-256
+    const buf = await blob.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest('SHA-256',buf);
+    const hashArr = Array.from(new Uint8Array(hashBuf));
+    APP.fotoHash = hashArr.map(b=>b.toString(16).padStart(2,'0')).join('');
+    // ID compuesto
+    APP.sesionSeq++;
+    const fecha = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const seq = String(APP.sesionSeq).padStart(3,'0');
+    const planoCode = APP.plano.split(' ')[0].replace(/[^v0-9]/gi,'');
+    APP.fotoId = `DOPX_${APP.obra.id}_${fecha}_${APP.seccion}_${APP.usuario.iniciales}_${seq}_${planoCode}`;
+    // Metadatos
+    APP.fotoMeta = {
+      id: APP.fotoId,
+      obraId: APP.obra.id,
+      obraNombre: APP.obra.nombre,
+      contrato: APP.obra.contrato,
+      usuario: APP.usuario.contrato,
+      usuarioNombre: APP.usuario.nombre,
+      iniciales: APP.usuario.iniciales,
+      rol: APP.usuario.rol,
+      seccion: APP.seccion,
+      plano: APP.plano,
+      estado: APP.estado,
+      gpsLat: APP.gps?.lat,
+      gpsLng: APP.gps?.lng,
+      gpsAcc: APP.gps?.acc,
+      gpsDentro: APP.gps?.inside,
+      gpsWarn: APP.gps?.warn,
+      ntpTs: APP.ntpTs,
+      ntpVerified: APP.ntpVerified,
+      sha256: APP.fotoHash,
+      capturedAt: new Date().toISOString(),
+      syncStatus: 'PENDING',
+      comentarios: []
+    };
+    detenerCamara();
+    mostrarConfirmacion();
+  },'image/jpeg',0.9);
+}
+
+// ── CONFIRMACIÓN ──────────────────────────────────────────────────
+function mostrarConfirmacion(){
+  document.getElementById('photo-preview-img').src = APP.fotoDataUrl;
+  document.getElementById('confirm-id').textContent = APP.fotoId;
+  document.getElementById('confirm-obra').textContent = APP.obra.nombre;
+  document.getElementById('confirm-seccion').textContent = APP.seccion;
+  document.getElementById('confirm-plano').textContent = APP.plano.split('—')[0].trim();
+  document.getElementById('confirm-estado').textContent = APP.estado;
+  document.getElementById('confirm-ts').textContent = APP.ntpVerified ? new Date(APP.ntpTs).toLocaleString('es-MX') : 'PENDIENTE';
+  document.getElementById('confirm-gps').textContent = APP.gps ? `${APP.gps.lat.toFixed(4)}, ${APP.gps.lng.toFixed(4)}` : '—';
+  document.getElementById('confirm-hash').textContent = APP.fotoHash;
+  document.getElementById('confirm-ntpwarn').classList.toggle('hidden', APP.ntpVerified);
+  document.getElementById('flag-tipo').value='';
+  document.getElementById('flag-texto-field').classList.add('hidden');
+  document.getElementById('flag-texto').value='';
+  document.getElementById('flag-tipo').onchange=function(){
+    document.getElementById('flag-texto-field').classList.toggle('hidden', !this.value || this.value!=='OTRO');
+  };
+  showScreen('screen-confirm');
+}
+
+async function guardarFoto(){
+  const flagTipo = document.getElementById('flag-tipo').value;
+  const flagTexto = document.getElementById('flag-texto').value.trim();
+  if(flagTipo){
+    APP.fotoMeta.comentarios.push({
+      tipo: flagTipo,
+      texto: flagTexto,
+      autor: APP.usuario.contrato,
+      autorNombre: APP.usuario.nombre,
+      rol: APP.usuario.rol,
+      fecha: new Date().toISOString()
+    });
+  }
+  // Guardar en cola
+  const entry = {
+    ...APP.fotoMeta,
+    dataUrl: APP.fotoDataUrl,
+    blob: APP.fotoBlob,
+  };
+  await dbPut('queue',entry);
+  actualizarContadorQueue();
+  // Intentar sync inmediato
+  intentarSync(entry);
+  toast('Foto guardada — '+APP.fotoId,'success');
+  showScreen('screen-config');
+  resetConfigSteps();
+}
+
+function descartarFoto(){
+  APP.fotoBlob=null; APP.fotoDataUrl=null; APP.fotoHash=null; APP.fotoId=null; APP.fotoMeta=null;
+  APP.sesionSeq = Math.max(0, APP.sesionSeq-1);
+  toast('Foto descartada');
+  showScreen('screen-config');
+  resetConfigSteps();
+}
+
+// ── SYNC ───────────────────────────────────────────────────────────
+async function actualizarContadorQueue(){
+  const q = await dbGetAll('queue');
+  const n = q.length;
+  document.getElementById('queue-count').textContent=n;
+  document.getElementById('fab-queue-count').textContent=n;
+}
+
+async function intentarSync(entry){
+  if(!navigator.onLine) return;
+  // SIMULADO: en producción → Drive API v3
+  try {
+    await new Promise(r=>setTimeout(r,1200)); // Simula upload
+    await dbDelete('queue', entry.id);
+    actualizarContadorQueue();
+    // Si NTP pendiente, asignar ahora
+    if(!entry.ntpVerified){
+      try {
+        const r = await fetch('https://worldtimeapi.org/api/timezone/America/Mexico_City');
+        const data = await r.json();
+        entry.ntpTs = data.datetime;
+        entry.ntpVerified = true;
+        entry.ntpFlag = 'TIMESTAMP_ASSIGNED_ON_SYNC';
+      } catch(e){ entry.ntpFlag='TIMESTAMP_UNRESOLVED'; }
+    }
+  } catch(e){ /* queda en cola */ }
+}
+
+async function syncNow(){
+  const q = await dbGetAll('queue');
+  if(q.length===0){ toast('No hay fotos pendientes'); return; }
+  toast('Sincronizando '+q.length+' foto(s)...');
+  for(const entry of q) await intentarSync(entry);
+  await renderizarQueue();
+  toast('Sincronización completa','success');
+}
+
+async function renderizarQueue(){
+  await actualizarContadorQueue();
+  const q = await dbGetAll('queue');
+  const list = document.getElementById('queue-list');
+  const empty = document.getElementById('queue-empty');
+  if(q.length===0){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  list.innerHTML = q.map(e=>`
+    <div class="queue-item">
+      <img class="queue-thumb" src="${e.dataUrl||''}">
+      <div class="queue-info">
+        <div class="queue-id">${e.id}</div>
+        <div class="queue-meta">${e.obraNombre} · ${e.seccion}</div>
+        <div class="queue-meta">${e.ntpVerified?'NTP ✓':'⚠ Timestamp pendiente'}</div>
+      </div>
+      <span class="badge badge-orange">PENDIENTE</span>
+    </div>`).join('');
+  document.getElementById('queue-online-badge').className = navigator.onLine ? 'badge badge-green' : 'badge badge-gray';
+  document.getElementById('queue-online-badge').textContent = navigator.onLine ? 'En línea' : 'Sin conexión';
+}
+
+// ── FAB ────────────────────────────────────────────────────────────
+let fabOpen=false;
+function toggleFab(){
+  fabOpen=!fabOpen;
+  document.getElementById('fab-main').classList.toggle('open',fabOpen);
+  document.getElementById('fab-options').classList.toggle('open',fabOpen);
+}
+function irAQueue(){ toggleFab(); APP.screenHistory.push(document.querySelector('.screen.active').id); renderizarQueue(); showScreen('screen-queue'); }
+function irALog(){ toggleFab(); APP.screenHistory.push(document.querySelector('.screen.active').id); renderizarLog(); showScreen('screen-log'); }
+function irAAdmin(){ toggleFab(); cargarSelectsAdmin(); showScreen('screen-admin'); }
+function volverDeQueue(){ showScreen(APP.screenHistory.pop()||'screen-obras'); }
+function volverDeLog(){ showScreen(APP.screenHistory.pop()||'screen-obras'); }
+
+// ── LOG DE EVENTOS ────────────────────────────────────────────────
+async function registrarEvento(tipo,detalle){
+  await dbPut('eventos',{tipo,detalle,fecha:new Date().toISOString()});
+}
+async function renderizarLog(){
+  const eventos = await dbGetAll('eventos');
+  const list = document.getElementById('events-log-list');
+  const empty = document.getElementById('events-log-empty');
+  if(eventos.length===0){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  list.innerHTML = [...eventos].reverse().map(e=>`
+    <div class="log-entry">
+      <div class="log-entry-header">
+        <span class="log-entry-event">${e.tipo}</span>
+        <span class="log-entry-time">${new Date(e.fecha).toLocaleString('es-MX')}</span>
+      </div>
+      <div class="log-entry-detail">${e.detalle}</div>
+    </div>`).join('');
+}
+
+// ── PANEL DE ADMINISTRACIÓN ────────────────────────────────────────
+function adminTab(tab){
+  document.querySelectorAll('.admin-tab').forEach((t,i)=>{
+    const tabs=['obras','planos','usuarios','comentarios'];
+    t.classList.toggle('active',tabs[i]===tab);
+  });
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('admin-'+tab).classList.add('active');
+}
+
+async function cargarSelectsAdmin(){
+  const obras = await dbGetAll('obras');
+  const selects = ['adm-plano-obra','adm-usr-obra'];
+  selects.forEach(sid=>{
+    const sel=document.getElementById(sid);
+    sel.innerHTML='<option value="">— Seleccionar obra —</option>';
+    obras.forEach(o=>{
+      sel.innerHTML+=`<option value="${o.id}">${o.nombre}</option>`;
+    });
+  });
+  renderizarAdminObras();
+  renderizarAdminPlanos();
+  renderizarAdminUsuarios();
+}
+
+async function adminGuardarObra(){
+  const nombre=document.getElementById('adm-obra-nombre').value.trim();
+  const contrato=document.getElementById('adm-obra-contrato').value.trim().toUpperCase();
+  const contratista=document.getElementById('adm-obra-contratista').value.trim();
+  const poligonoTxt=document.getElementById('adm-obra-poligono').value.trim();
+  const estado=document.getElementById('adm-obra-estado').value;
+  if(!nombre||!contrato){ toast('Nombre y contrato requeridos','error'); return; }
+  let poligono=null;
+  if(poligonoTxt){ try{ poligono=JSON.parse(poligonoTxt); }catch(e){ toast('GeoJSON inválido','error'); return; } }
+  const id='OBR'+Date.now().toString().slice(-4);
+  await dbPut('obras',{id,nombre,contrato,contratista,poligono,estado});
+  toast('Obra guardada','success');
+  ['adm-obra-nombre','adm-obra-contrato','adm-obra-contratista','adm-obra-poligono'].forEach(id=>document.getElementById(id).value='');
+  await cargarSelectsAdmin();
+}
+
+async function renderizarAdminObras(){
+  const obras=await dbGetAll('obras');
+  document.getElementById('admin-obras-list').innerHTML=obras.map(o=>`
+    <div class="list-item">
+      <div class="list-item-icon">🏗️</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${o.nombre}</div>
+        <div class="list-item-sub">${o.contrato} · ${o.contratista}</div>
+        <div class="list-item-sub"><span class="badge ${o.estado==='activa'?'badge-green':'badge-gray'}">${o.estado}</span></div>
+      </div>
+    </div>`).join('');
+}
+
+async function adminGuardarPlano(){
+  const obraId=document.getElementById('adm-plano-obra').value;
+  const version=document.getElementById('adm-plano-version').value.trim();
+  const fuente=document.getElementById('adm-plano-fuente').value.trim();
+  if(!obraId||!version){ toast('Selecciona obra y versión','error'); return; }
+  // Desactivar anteriores de la misma obra
+  const todos=await dbGetAll('planos');
+  for(const p of todos){ if(p.obraId===obraId&&p.activo){ p.activo=false; await dbPut('planos',p); } }
+  await dbPut('planos',{key:obraId+'_'+Date.now(),obraId,version,fuente,activo:true});
+  toast('Versión de plano activada','success');
+  document.getElementById('adm-plano-version').value='';
+  document.getElementById('adm-plano-fuente').value='';
+  await renderizarAdminPlanos();
+}
+
+async function renderizarAdminPlanos(){
+  const planos=await dbGetAll('planos');
+  document.getElementById('admin-planos-list').innerHTML=planos.map(p=>`
+    <div class="list-item">
+      <div class="list-item-icon">📐</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${p.version}</div>
+        <div class="list-item-sub">${p.obraId} · ${p.fuente||'Sin fuente'}</div>
+        <span class="badge ${p.activo?'badge-green':'badge-gray'}">${p.activo?'ACTIVA':'HISTÓRICA'}</span>
+      </div>
+    </div>`).join('');
+}
+
+async function adminGuardarUsuario(){
+  const nombre=document.getElementById('adm-usr-nombre').value.trim();
+  const iniciales=document.getElementById('adm-usr-iniciales').value.trim().toUpperCase();
+  const contrato=document.getElementById('adm-usr-contrato').value.trim().toUpperCase();
+  const pin=document.getElementById('adm-usr-pin').value.trim();
+  const rol=document.getElementById('adm-usr-rol').value;
+  const obraId=document.getElementById('adm-usr-obra').value;
+  const detHabilitado=document.getElementById('adm-usr-det').value==='si';
+  if(!nombre||!contrato||!pin||pin.length!==6){ toast('Completa todos los campos. PIN debe ser 6 dígitos','error'); return; }
+  await dbPut('usuarios',{contrato,pin,nombre,iniciales,rol,obraId,detHabilitado,activo:true});
+  toast('Usuario registrado','success');
+  ['adm-usr-nombre','adm-usr-iniciales','adm-usr-contrato','adm-usr-pin'].forEach(id=>document.getElementById(id).value='');
+  await renderizarAdminUsuarios();
+}
+
+async function renderizarAdminUsuarios(){
+  const usuarios=await dbGetAll('usuarios');
+  document.getElementById('admin-usuarios-list').innerHTML=usuarios.map(u=>`
+    <div class="list-item">
+      <div class="list-item-icon">👤</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${u.nombre}</div>
+        <div class="list-item-sub">${u.contrato} · <span class="badge badge-blue">${u.rol}</span></div>
+        <div class="list-item-sub">Iniciales: ${u.iniciales} · DET: ${u.detHabilitado?'✓':'—'}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function adminBuscarFoto(){
+  const buscar=document.getElementById('adm-foto-buscar').value.trim();
+  if(!buscar){ toast('Ingresa el ID de foto','error'); return; }
+  const cola=await dbGetAll('queue');
+  const foto=cola.find(f=>f.id===buscar);
+  const resEl=document.getElementById('admin-foto-resultado');
+  const infoEl=document.getElementById('admin-foto-info');
+  const comEl=document.getElementById('admin-foto-comentarios');
+  if(!foto){
+    toast('Foto no encontrada en cola local','warning');
+    resEl.classList.add('hidden');
+    return;
+  }
+  resEl.classList.remove('hidden');
+  infoEl.innerHTML=`
+    <div class="meta-item"><div class="meta-item-label">ID</div><div class="meta-item-val text-mono">${foto.id}</div></div>
+    <div class="meta-item mt-8"><div class="meta-item-label">Obra</div><div class="meta-item-val">${foto.obraNombre}</div></div>
+    <div class="meta-item mt-8"><div class="meta-item-label">Sección</div><div class="meta-item-val">${foto.seccion}</div></div>
+  `;
+  comEl.innerHTML = (foto.comentarios||[]).length===0
+    ? '<div class="text-small" style="color:var(--gray-400)">Sin comentarios</div>'
+    : (foto.comentarios||[]).map(c=>`
+      <div class="log-entry">
+        <div class="log-entry-header"><span class="log-entry-event">${c.tipo}</span><span class="log-entry-time">${new Date(c.fecha).toLocaleString('es-MX')}</span></div>
+        <div>${c.autorNombre} (${c.rol})</div>
+        <div class="log-entry-detail">${c.texto||''}</div>
+      </div>`).join('');
+  // Guardar referencia para añadir comentario
+  window._fotoActual = foto;
+}
+
+async function adminGuardarComentario(){
+  if(!window._fotoActual){ toast('Busca una foto primero','error'); return; }
+  const tipo=document.getElementById('adm-com-tipo').value;
+  const texto=document.getElementById('adm-com-texto').value.trim();
+  const comentario={tipo,texto,autor:APP.usuario.contrato,autorNombre:APP.usuario.nombre,rol:APP.usuario.rol,fecha:new Date().toISOString()};
+  window._fotoActual.comentarios = window._fotoActual.comentarios||[];
+  window._fotoActual.comentarios.push(comentario);
+  await dbPut('queue',window._fotoActual);
+  toast('Comentario guardado','success');
+  document.getElementById('adm-com-texto').value='';
+  adminBuscarFoto();
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────
+function toast(msg, type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='show'+(type?' '+type:'');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>{el.className='';},3000);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async ()=>{
+  await initDB();
+  await seedDemoData();
+  await actualizarContadorQueue();
+  showScreen('screen-login');
+  window.addEventListener('online', ()=>{ toast('Conexión restaurada — sincronizando...','success'); syncNow(); });
+  window.addEventListener('offline', ()=>{ toast('Sin conexión — modo offline activo','warning'); });
+  document.getElementById('login-pin').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+});
+</script>
+</body>
+</html>
