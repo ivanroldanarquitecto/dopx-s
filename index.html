@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#6B1530">
@@ -1092,7 +1093,7 @@
 if('serviceWorker' in navigator){
   const swCode = `
     const CACHE='dopx-s-v1';
-    const ASSETS=['/'];
+    const ASSETS=['/','https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js'];
     self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
     self.addEventListener('fetch',e=>{
       if(e.request.method!=='GET')return;
@@ -1159,9 +1160,15 @@ async function seedDemoData(){
     {contrato:'SUPER-001',pin:'999999',nombre:'Arq. Luis Torres',iniciales:'LTO',rol:'supervisor',obraId:'OBR01',detHabilitado:true},
     {contrato:'ADMIN-001',pin:'000000',nombre:'Administrador DOPX',iniciales:'ADM',rol:'admin',obraId:null,detHabilitado:true},
   ];
+  const _lineaPruebaOBR01 = turf.lineString([
+    [-96.923722, 19.527080],
+    [-96.923703, 19.526887],
+    [-96.923958, 19.526872]
+  ]);
+  const _poligonoPruebaOBR01 = turf.buffer(_lineaPruebaOBR01, 10, {units:'meters'});
   const demoObras = [
-    {id:'OBR01',nombre:'Pavimentación Calle Bravo',contrato:'OBR-2026-001',contratista:'Constructora Xalapeña SA',
-     poligono:{type:'Circle',lat:19.5338,lng:-96.9102,r:200},estado:'activa'},
+    {id:'OBR01',nombre:'Pavimentación Calle Bravo (PRUEBA GPS)',contrato:'OBR-2026-001',contratista:'Constructora Xalapeña SA',
+     poligono:{type:'Polygon', coordinates:_poligonoPruebaOBR01.geometry.coordinates},estado:'activa'},
     {id:'OBR02',nombre:'Repavimentación Av. Lázaro Cárdenas',contrato:'OBR-2026-002',contratista:'Vialidad MX SA',
      poligono:{type:'Circle',lat:19.5400,lng:-96.9200,r:150},estado:'activa'},
   ];
