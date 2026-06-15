@@ -1165,7 +1165,7 @@ async function seedDemoData(){
     [-96.923703, 19.526887],
     [-96.923958, 19.526872]
   ]);
-  const _poligonoPruebaOBR01 = turf.buffer(_lineaPruebaOBR01, 10, {units:'meters'});
+  const _poligonoPruebaOBR01 = turf.buffer(_lineaPruebaOBR01, 25, {units:'meters'});
   const demoObras = [
     {id:'OBR01',nombre:'Pavimentación Calle Bravo (PRUEBA GPS)',contrato:'OBR-2026-001',contratista:'Constructora Xalapeña SA',
      poligono:{type:'Polygon', coordinates:_poligonoPruebaOBR01.geometry.coordinates},estado:'activa'},
