@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1092,7 +1091,7 @@
 <script>
 if('serviceWorker' in navigator){
   const swCode = `
-    const CACHE='dopx-s-v3';
+    const CACHE='dopx-s-v4';
     const ASSETS=['/','https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js'];
     self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
     self.addEventListener('fetch',e=>{
@@ -1435,7 +1434,7 @@ function haversine(lat1,lng1,lat2,lng2){
 function puntoDentroPoligono(lat,lng,coords){
   let inside=false;
   for(let i=0,j=coords.length-1;i<coords.length;j=i++){
-    const xi=coords[i][1],yi=coords[i][0],xj=coords[j][1],yj=coords[j][0];
+    const xi=coords[i][0],yi=coords[i][1],xj=coords[j][0],yj=coords[j][1];
     if(((yi>lat)!==(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside;
   }
   return inside;
