@@ -1091,7 +1091,7 @@
 <script>
 if('serviceWorker' in navigator){
   const swCode = `
-    const CACHE='dopx-s-v4';
+    const CACHE='dopx-s-v5';
     const ASSETS=['/','https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js'];
     self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
     self.addEventListener('fetch',e=>{
@@ -1156,26 +1156,39 @@ function dbDelete(store,key){ return new Promise((res,rej)=>{ const t=DB.transac
 async function seedDemoData(){
   const demoUsers = [
     {contrato:'OBR-2026-001',pin:'123456',nombre:'José Ramírez Morales',iniciales:'JRM',rol:'capturista',obraId:'OBR01',detHabilitado:false},
-    {contrato:'SUPER-001',pin:'999999',nombre:'Arq. Luis Torres',iniciales:'LTO',rol:'supervisor',obraId:'OBR01',detHabilitado:true},
+    {contrato:'SUPER-001',pin:'999999',nombre:'Arq. Luis Torres',iniciales:'LTO',rol:'supervisor',obraId:null,detHabilitado:true},
     {contrato:'ADMIN-001',pin:'000000',nombre:'Administrador DOPX',iniciales:'ADM',rol:'admin',obraId:null,detHabilitado:true},
   ];
-  const _lineaPruebaOBR01 = turf.lineString([
-    [-96.923722, 19.527080],
-    [-96.923703, 19.526887],
-    [-96.923958, 19.526872]
+  const _lineaT1 = turf.lineString([
+    [-96.923718, 19.527076],
+    [-96.923702, 19.526887],
+    [-96.923952, 19.526874]
   ]);
-  const _poligonoPruebaOBR01 = turf.buffer(_lineaPruebaOBR01, 35, {units:'meters'});
+  const _lineaT2 = turf.lineString([
+    [-96.924059, 19.527064],
+    [-96.924335, 19.527043],
+    [-96.924300, 19.526727]
+  ]);
+  const _lineaT3 = turf.lineString([
+    [-96.924067, 19.526453],
+    [-96.924056, 19.526291],
+    [-96.924050, 19.526129]
+  ]);
+  const _polT1 = turf.buffer(_lineaT1, 35, {units:'meters'});
+  const _polT2 = turf.buffer(_lineaT2, 35, {units:'meters'});
+  const _polT3 = turf.buffer(_lineaT3, 35, {units:'meters'});
   const demoObras = [
-    {id:'OBR01',nombre:'Pavimentación Calle Bravo (PRUEBA GPS)',contrato:'OBR-2026-001',contratista:'Constructora Xalapeña SA',
-     poligono:{type:'Polygon', coordinates:_poligonoPruebaOBR01.geometry.coordinates},estado:'activa'},
-    {id:'OBR02',nombre:'Repavimentación Av. Lázaro Cárdenas',contrato:'OBR-2026-002',contratista:'Vialidad MX SA',
-     poligono:{type:'Circle',lat:19.5400,lng:-96.9200,r:150},estado:'activa'},
+    {id:'OBR01',nombre:'Parque Juárez — Tramo 1 (Norte)',contrato:'OBR-2026-001',contratista:'Constructora Xalapeña SA',
+     poligono:{type:'Polygon', coordinates:_polT1.geometry.coordinates},estado:'activa'},
+    {id:'OBR02',nombre:'Parque Juárez — Tramo 2 (Centro)',contrato:'OBR-2026-002',contratista:'Constructora Xalapeña SA',
+     poligono:{type:'Polygon', coordinates:_polT2.geometry.coordinates},estado:'activa'},
+    {id:'OBR03',nombre:'Parque Juárez — Tramo 3 (Sur)',contrato:'OBR-2026-003',contratista:'Constructora Xalapeña SA',
+     poligono:{type:'Polygon', coordinates:_polT3.geometry.coordinates},estado:'activa'},
   ];
   const demoPlanos = [
-    {key:'OBR01_v01',obraId:'OBR01',version:'v01 — Planta Baja General',fuente:'PP-2026-001',activo:false},
-    {key:'OBR01_v02',obraId:'OBR01',version:'v02 — Detalle Estructural',fuente:'PP-2026-002',activo:false},
-    {key:'OBR01_v03',obraId:'OBR01',version:'v03 — Corte Transversal',fuente:'PP-2026-003',activo:true},
-    {key:'OBR02_v01',obraId:'OBR02',version:'v01 — Planta General',fuente:'PP-2026-004',activo:true},
+    {key:'OBR01_v01',obraId:'OBR01',version:'v01 — Planta General',fuente:'PP-2026-001',activo:true},
+    {key:'OBR02_v01',obraId:'OBR02',version:'v01 — Planta General',fuente:'PP-2026-002',activo:true},
+    {key:'OBR03_v01',obraId:'OBR03',version:'v01 — Planta General',fuente:'PP-2026-003',activo:true},
   ];
   for(const u of demoUsers){ const ex=await dbGet('usuarios',u.contrato); if(!ex) await dbPut('usuarios',u); }
   for(const o of demoObras){ const ex=await dbGet('obras',o.id); if(!ex) await dbPut('obras',o); }
