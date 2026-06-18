@@ -1119,6 +1119,7 @@ const APP = {
   gps: null,           // {lat, lng, acc, inside, warn}
   ntpTs: null,         // timestamp string o null
   ntpVerified: false,
+  ntpSource: null,
   fotoBlob: null,
   fotoDataUrl: null,
   fotoHash: null,
@@ -1520,25 +1521,42 @@ async function activarCamara(){
 
 async function obtenerNTP(){
   const badge = document.getElementById('cam-ntpbadge');
-  try {
-    const r = await Promise.race([
-      fetch('https://worldtimeapi.org/api/timezone/America/Mexico_City'),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000))
-    ]);
-    if(!r.ok) throw new Error('NTP error');
-    const data = await r.json();
-    APP.ntpTs = data.datetime;
-    APP.ntpVerified = true;
-    badge.className = 'badge badge-green';
-    badge.textContent = 'NTP ✓';
-    document.getElementById('hud-ts').textContent = new Date(APP.ntpTs).toLocaleTimeString('es-MX');
-  } catch(e){
-    APP.ntpTs = null;
-    APP.ntpVerified = false;
-    badge.className = 'badge badge-orange';
-    badge.textContent = 'NTP PENDIENTE';
-    document.getElementById('hud-ts').textContent = 'Timestamp pendiente';
+  const FUENTES = [
+    {
+      url: 'https://worldtimeapi.org/api/timezone/America/Mexico_City',
+      campo: 'datetime',
+      nombre: 'worldtimeapi'
+    },
+    {
+      url: 'https://timeapi.io/api/time/current/zone?timeZone=America/Mexico_City',
+      campo: 'dateTime',
+      nombre: 'timeapi.io'
+    }
+  ];
+  for(const fuente of FUENTES){
+    try {
+      const r = await Promise.race([
+        fetch(fuente.url),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000))
+      ]);
+      if(!r.ok) throw new Error('NTP error');
+      const data = await r.json();
+      APP.ntpTs = data[fuente.campo];
+      APP.ntpVerified = true;
+      APP.ntpSource = fuente.nombre;
+      badge.className = 'badge badge-green';
+      badge.textContent = 'NTP ✓';
+      document.getElementById('hud-ts').textContent = new Date(APP.ntpTs).toLocaleTimeString('es-MX');
+      return;
+    } catch(e){ /* intentar siguiente fuente */ }
   }
+  // Fallback: reloj del dispositivo
+  APP.ntpTs = new Date().toISOString();
+  APP.ntpVerified = false;
+  APP.ntpSource = 'DEVICE_CLOCK';
+  badge.className = 'badge badge-orange';
+  badge.textContent = 'NTP PENDIENTE';
+  document.getElementById('hud-ts').textContent = 'Timestamp pendiente';
 }
 
 function detenerCamara(){
@@ -1592,6 +1610,7 @@ async function disparo(){
       gpsWarn: APP.gps?.warn,
       ntpTs: APP.ntpTs,
       ntpVerified: APP.ntpVerified,
+      ntpSource: APP.ntpSource || 'UNKNOWN',
       sha256: APP.fotoHash,
       capturedAt: new Date().toISOString(),
       syncStatus: 'PENDING',
@@ -1705,6 +1724,7 @@ async function intentarSync(entry){
       gpsWarn:      entry.gpsWarn,
       ntpTs:        entry.ntpTs,
       ntpVerified:  entry.ntpVerified,
+      ntpSource:    entry.ntpSource || 'UNKNOWN',
       sha256:       entry.sha256,
       capturedAt:   entry.capturedAt,
       nota:         entry.nota || '',
