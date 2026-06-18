@@ -1175,9 +1175,9 @@ async function seedDemoData(){
     [-96.924056, 19.526291],
     [-96.924050, 19.526129]
   ]);
-  const _polT1 = turf.buffer(_lineaT1, 35, {units:'meters'});
-  const _polT2 = turf.buffer(_lineaT2, 35, {units:'meters'});
-  const _polT3 = turf.buffer(_lineaT3, 35, {units:'meters'});
+  const _polT1 = turf.buffer(_lineaT1, 50, {units:'meters'});
+  const _polT2 = turf.buffer(_lineaT2, 50, {units:'meters'});
+  const _polT3 = turf.buffer(_lineaT3, 50, {units:'meters'});
   const demoObras = [
     {id:'OBR01',nombre:'Parque Juárez — Tramo 1 (Norte)',contrato:'OBR-2026-001',contratista:'Constructora Xalapeña SA',
      poligono:{type:'Polygon', coordinates:_polT1.geometry.coordinates},estado:'activa'},
