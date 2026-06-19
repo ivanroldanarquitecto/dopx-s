@@ -901,6 +901,14 @@
     <div id="confirm-ntpwarn" class="warning-box hidden">⚠ Timestamp pendiente — se asignará al sincronizar</div>
   </div>
 
+  <!-- Nota libre, independiente de anomalías -->
+  <div class="card">
+    <div class="card-title"><span class="card-title-icon">📝</span> Nota de campo (opcional)</div>
+    <div class="field">
+      <textarea id="nota-libre" placeholder="Observaciones generales de la foto..."></textarea>
+    </div>
+  </div>
+
   <!-- Comentario/bandera del capturista -->
   <div class="card">
     <div class="card-title"><span class="card-title-icon">💬</span> Observación (opcional)</div>
@@ -1636,6 +1644,7 @@ function mostrarConfirmacion(){
   document.getElementById('flag-tipo').value='';
   document.getElementById('flag-texto-field').classList.add('hidden');
   document.getElementById('flag-texto').value='';
+  document.getElementById('nota-libre').value='';
   document.getElementById('flag-tipo').onchange=function(){
     document.getElementById('flag-texto-field').classList.toggle('hidden', !this.value || this.value!=='OTRO');
   };
@@ -1645,6 +1654,7 @@ function mostrarConfirmacion(){
 async function guardarFoto(){
   const flagTipo = document.getElementById('flag-tipo').value;
   const flagTexto = document.getElementById('flag-texto').value.trim();
+  const notaLibre = document.getElementById('nota-libre').value.trim();
   if(flagTipo){
     APP.fotoMeta.comentarios.push({
       tipo: flagTipo,
@@ -1655,6 +1665,10 @@ async function guardarFoto(){
       fecha: new Date().toISOString()
     });
   }
+  APP.fotoMeta.tipoProblema = flagTipo || '';
+  APP.fotoMeta.tipoProblemaDetalle = flagTexto || '';
+  APP.fotoMeta.nota = notaLibre;
+
   // Guardar en cola
   const entry = {
     ...APP.fotoMeta,
@@ -1727,6 +1741,8 @@ async function intentarSync(entry){
       ntpSource:    entry.ntpSource || 'UNKNOWN',
       sha256:       entry.sha256,
       capturedAt:   entry.capturedAt,
+      tipoProblema: entry.tipoProblema || '',
+      tipoProblemaDetalle: entry.tipoProblemaDetalle || '',
       nota:         entry.nota || '',
       comentarios:  JSON.stringify(entry.comentarios || []),
       dataUrl:      entry.dataUrl
