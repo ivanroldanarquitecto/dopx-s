@@ -1642,6 +1642,7 @@ async function disparo(){
       gpsAcc: APP.gps?.acc,
       gpsDentro: APP.gps?.inside,
       gpsWarn: APP.gps?.warn,
+      gpsOverride: APP.gps?.override || false,
       ntpTs: APP.ntpTs,
       ntpVerified: APP.ntpVerified,
       ntpSource: APP.ntpSource || 'UNKNOWN',
@@ -1681,6 +1682,10 @@ async function guardarFoto(){
   const flagTipo = document.getElementById('flag-tipo').value;
   const flagTexto = document.getElementById('flag-texto').value.trim();
   const notaLibre = document.getElementById('nota-libre').value.trim();
+  if(APP.gps?.override && !notaLibre){
+    alert('Esta foto usó "Omitir GPS". Debe escribir una nota explicando el motivo antes de guardar.');
+    return;
+  }
   if(flagTipo){
     APP.fotoMeta.comentarios.push({
       tipo: flagTipo,
@@ -1762,6 +1767,7 @@ async function intentarSync(entry){
       gpsAcc:       entry.gpsAcc,
       gpsDentro:    entry.gpsDentro,
       gpsWarn:      entry.gpsWarn,
+      gpsOverride:  entry.gpsOverride || false,
       ntpTs:        entry.ntpTs,
       ntpVerified:  entry.ntpVerified,
       ntpSource:    entry.ntpSource || 'UNKNOWN',
