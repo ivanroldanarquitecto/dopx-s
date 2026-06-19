@@ -833,6 +833,9 @@
     <button class="btn btn-ghost hidden mt-8" id="btn-omitir-gps" onclick="omitirGPS()">
       ⚠ Omitir GPS (modo prueba)
     </button>
+    <button class="btn btn-ghost hidden mt-8" id="btn-omitir-gps-real" onclick="solicitarOverrideGPS()">
+      🔒 Omitir GPS (requiere contraseña)
+    </button>
     <button class="btn btn-ghost mt-8" onclick="showScreen('screen-config')">← Volver</button>
   </div>
 </div>
@@ -1372,6 +1375,7 @@ function iniciarGPS(){
   statusBox.className = 'info-box';
   statusBox.textContent = 'Obteniendo ubicación GPS...';
   document.getElementById('btn-activar-camara').classList.add('hidden');
+  document.getElementById('btn-omitir-gps-real').classList.add('hidden');
   if(esModoDemo()){
     document.getElementById('btn-omitir-gps').classList.remove('hidden');
   }
@@ -1381,14 +1385,35 @@ function iniciarGPS(){
       statusBox.className = 'warning-box';
       statusBox.textContent = 'No se pudo obtener GPS: ' + err.message;
       registrarEvento('GPS_ERROR', err.message);
+      document.getElementById('btn-omitir-gps-real').classList.remove('hidden');
     },
     {enableHighAccuracy:true, timeout:15000, maximumAge:0}
   );
 }
-
 const DEMO_CONTRATOS = ['OBR-2026-001','SUPER-001','ADMIN-001'];
 function esModoDemo(){ return APP.usuario && DEMO_CONTRATOS.includes(APP.usuario.contrato); }
 
+const GPS_OVERRIDE_PASSWORD = '2026';
+
+function solicitarOverrideGPS(){
+  const pass = prompt('Contraseña requerida para omitir GPS:');
+  if(pass === null) return;
+  if(pass !== GPS_OVERRIDE_PASSWORD){
+    alert('Contraseña incorrecta.');
+    return;
+  }
+  if(APP.gps){
+    APP.gps.override = true;
+  } else {
+    APP.gps = {lat:null, lng:null, acc:null, inside:false, warn:true, override:true};
+  }
+  const statusBox = document.getElementById('gps-status-box');
+  statusBox.className = 'warning-box';
+  statusBox.textContent = '🔒 GPS omitido por contraseña — foto marcada como GPS_OVERRIDE.';
+  document.getElementById('gps-estado').innerHTML = '<span class="gps-warn">OVERRIDE AUTORIZADO</span>';
+  document.getElementById('btn-activar-camara').classList.remove('hidden');
+  document.getElementById('btn-omitir-gps-real').classList.add('hidden');
+}
 function omitirGPS(){
   APP.gps = {lat:19.5338, lng:-96.9102, acc:8, inside:true, warn:false, demo:true};
   const statusBox = document.getElementById('gps-status-box');
@@ -1420,6 +1445,7 @@ function procesarGPS(pos){
     estadoEl.innerHTML = '<span class="gps-error">FUERA DEL POLÍGONO</span>';
     registrarEvento('GPS_FUERA_POLIGONO',`${lat},${lng} · Obra:${APP.obra.id}`);
     document.getElementById('btn-activar-camara').classList.add('hidden');
+    document.getElementById('btn-omitir-gps-real').classList.remove('hidden');
   } else if(warn){
     statusBox.className = 'warning-box';
     statusBox.textContent = `⚠ Dentro del polígono. Precisión ${acc.toFixed(0)}m > 15m — advertencia registrada.`;
